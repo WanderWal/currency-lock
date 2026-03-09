@@ -1,0 +1,11 @@
+/* Currency Lock — locked input styling */
+
+.currency-lock--locked {
+  cursor: not-allowed !important;
+  opacity: 0.6;
+  /* Override any pointer-events set by the sheet theme */
+  pointer-events: none !important;
+  /* Subtle visual indicator that the field is read-only */
+  background-color: var(--color-bg-option, rgba(0, 0, 0, 0.05)) !important;
+  border-color: var(--color-border-light-tertiary, #aaa) !important;
+}

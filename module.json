@@ -1,0 +1,24 @@
+{
+  "id": "currency-lock",
+  "title": "Currency Lock",
+  "description": "Prevents players from modifying currency amounts on character sheets they own. Only GMs can adjust currency.",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13"
+  },
+  "authors": [
+    {
+      "name": "Module Author"
+    }
+  ],
+  "esmodules": ["scripts/currency-lock.js"],
+  "styles": ["styles/currency-lock.css"],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ]
+}

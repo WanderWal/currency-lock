@@ -1,0 +1,5 @@
+{
+  "currency-lock.settings.enabled.name": "Enable Currency Lock",
+  "currency-lock.settings.enabled.hint": "When enabled, players cannot modify currency amounts on their character sheets. Only GMs can adjust currency.",
+  "currency-lock.notifications.locked": "Currency is locked. Ask your GM to adjust your currency."
+}
