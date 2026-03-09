@@ -9,7 +9,7 @@
   },
   "authors": [
     {
-      "name": "Module Author"
+      "name": "Metronoid"
     }
   ],
   "manifest": "https://raw.githubusercontent.com/WanderWal/currency-lock/refs/heads/main/module.json",
