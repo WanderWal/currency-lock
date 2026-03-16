@@ -13,7 +13,7 @@ Hooks.once('init', () => {
   });
 });
 
-// ─── Block updates on the data layer ────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
  * Checks whether an update object touches currency data.
@@ -28,60 +28,36 @@ function touchesCurrency(changes) {
   return Object.keys(changes).some((k) => k.startsWith('system.currency.'));
 }
 
-Hooks.on('preUpdateActor', (actor, changes, _options, userId) => {
+/**
+ * Heuristically detect actor updates submitted from a character sheet form.
+ * Foundry and system sheets commonly submit with this option combination.
+ */
+function isActorSheetUpdate(options = {}) {
+  if (options.fromSheet === true) return true;
+  if (options.actorSheet === true) return true;
+  if (options.renderSheet === true) return true;
+
+  return (
+    options.diff === true &&
+    options.recursive === false &&
+    options.render === false &&
+    options.noHook !== true
+  );
+}
+
+// ─── Client-side block for sheet-originated edits ───────────────────────────
+// Fires before the socket message is sent, so the server never sees the change.
+
+Hooks.on('preUpdateActor', (actor, changes, options, userId) => {
   if (!game.settings.get(MODULE_ID, 'enabled')) return;
 
-  // Let GMs through unconditionally
   const user = game.users.get(userId);
-  if (user?.isGM) return;
 
-  if (touchesCurrency(changes)) {
-    // Only warn for the local client — avoids duplicate toasts when the GM
-    // triggers an update that is also evaluated on connected player clients.
+  if (!user?.isGM && touchesCurrency(changes) && isActorSheetUpdate(options)) {
+    // Warn only on the acting player's client to avoid duplicate toasts.
     if (game.userId === userId) {
       ui.notifications.warn(game.i18n.localize(`${MODULE_ID}.notifications.locked`));
     }
-    return false; // Cancel the update
+    return false; // Cancel before the socket message is sent.
   }
-});
-
-// ─── Lock the sheet UI ───────────────────────────────────────────────────────
-
-/**
- * Applies read-only styling to currency inputs so players receive immediate
- * visual feedback that the fields are locked.
- */
-function lockCurrencyInputs(html) {
-  // Works for dnd5e v3/v4 and most other systems that follow the same markup.
-  // Selector targets:
-  //   .currency input          — sheet containers with class "currency"
-  //   [name*="currency"] input — inputs nested under a labelled currency element
-  //   input[name*="currency"]  — inputs whose own name contains "currency"
-  const inputs = html[0].querySelectorAll(
-    '.currency input, [name*="currency"] input, input[name*="currency"]'
-  );
-
-  for (const input of inputs) {
-    input.setAttribute('readonly', true);
-    input.classList.add('currency-lock--locked');
-    // Prevent spinner arrows on number inputs
-    input.setAttribute('tabindex', '-1');
-  }
-}
-
-Hooks.on('renderActorSheet', (app, html, _data) => {
-  if (!game.settings.get(MODULE_ID, 'enabled')) return;
-  if (game.user.isGM) return;
-
-  lockCurrencyInputs(html);
-});
-
-// ApplicationV2-style sheets emit 'renderApplication' or use a different
-// lifecycle. Catch both the legacy and the v13 app rendering hooks.
-Hooks.on('renderApplication', (app, html, _data) => {
-  if (!game.settings.get(MODULE_ID, 'enabled')) return;
-  if (game.user.isGM) return;
-  if (!(app instanceof ActorSheet)) return;
-
-  lockCurrencyInputs(html);
 });
