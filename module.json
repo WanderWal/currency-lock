@@ -2,7 +2,7 @@
   "id": "currency-lock",
   "title": "Currency Lock",
   "description": "Prevents players from modifying currency amounts on character sheets they own. Only GMs can adjust currency.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "compatibility": {
     "minimum": "12",
     "verified": "13"
@@ -13,7 +13,7 @@
     }
   ],
   "manifest": "https://raw.githubusercontent.com/WanderWal/currency-lock/refs/heads/main/module.json",
-  "download": "https://github.com/WanderWal/currency-lock/archive/refs/tags/1.0.1.zip",
+  "download": "https://github.com/WanderWal/currency-lock/archive/refs/tags/1.0.2.zip",
   "esmodules": ["scripts/currency-lock.js"],
   "styles": ["styles/currency-lock.css"],
   "languages": [

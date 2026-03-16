@@ -28,36 +28,66 @@ function touchesCurrency(changes) {
   return Object.keys(changes).some((k) => k.startsWith('system.currency.'));
 }
 
-/**
- * Heuristically detect actor updates submitted from a character sheet form.
- * Foundry and system sheets commonly submit with this option combination.
- */
-function isActorSheetUpdate(options = {}) {
-  if (options.fromSheet === true) return true;
-  if (options.actorSheet === true) return true;
-  if (options.renderSheet === true) return true;
-
-  return (
-    options.diff === true &&
-    options.recursive === false &&
-    options.render === false &&
-    options.noHook !== true
-  );
+function isCharacterActorSheet(app) {
+  const actor = app?.actor ?? app?.document;
+  return actor?.documentName === 'Actor' && actor?.type === 'character';
 }
 
-// ─── Client-side block for sheet-originated edits ───────────────────────────
-// Fires before the socket message is sent, so the server never sees the change.
+// ─── Lock the character sheet UI ─────────────────────────────────────────────
 
-Hooks.on('preUpdateActor', (actor, changes, options, userId) => {
+function lockCurrencyInputs(rendered) {
+  const root = rendered?.[0] ?? rendered;
+  if (!(root instanceof HTMLElement)) return;
+
+  const inputs = root.querySelectorAll(
+    '.currency input, [name*="currency"] input, input[name*="currency"]'
+  );
+
+  for (const input of inputs) {
+    input.setAttribute('readonly', true);
+    input.classList.add('currency-lock--locked');
+    input.setAttribute('tabindex', '-1');
+  }
+}
+
+function applySheetLock(app, rendered) {
+  if (!game.settings.get(MODULE_ID, 'enabled')) return;
+  if (game.user.isGM) return;
+  if (!isCharacterActorSheet(app)) return;
+
+  lockCurrencyInputs(rendered);
+}
+
+Hooks.on('preUpdateActor', (actor, changes, _options, userId) => {
   if (!game.settings.get(MODULE_ID, 'enabled')) return;
 
   const user = game.users.get(userId);
+  if (user?.isGM) return;
+  if (actor.type !== 'character') return;
+  if (!touchesCurrency(changes)) return;
 
-  if (!user?.isGM && touchesCurrency(changes) && isActorSheetUpdate(options)) {
-    // Warn only on the acting player's client to avoid duplicate toasts.
-    if (game.userId === userId) {
-      ui.notifications.warn(game.i18n.localize(`${MODULE_ID}.notifications.locked`));
-    }
-    return false; // Cancel before the socket message is sent.
+  const hasOpenSheet = actor.sheet?.rendered === true;
+  if (!hasOpenSheet) return;
+
+  if (game.userId === userId) {
+    ui.notifications.warn(game.i18n.localize(`${MODULE_ID}.notifications.locked`));
   }
+
+  return false;
+});
+
+Hooks.on('renderActorSheet', (app, html) => {
+  applySheetLock(app, html);
+});
+
+Hooks.on('renderActorSheetV2', (app, element) => {
+  applySheetLock(app, element);
+});
+
+Hooks.on('renderActorSheet5eCharacter', (app, html) => {
+  applySheetLock(app, html);
+});
+
+Hooks.on('renderActorSheet5eCharacter2', (app, element) => {
+  applySheetLock(app, element);
 });
